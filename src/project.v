@@ -15,7 +15,7 @@ module tt_um_uwasic-onboarding-joyce-wu (
     input  wire       clk,      // clock
     input  wire       rst_n     // reset_n - low to reset
 
-    assign uio_oe = 8'hFF; // Set all IOs to output
+    assign uio_oe = 8'hFF; // Set all IOs to output 
 
     // Create wires to refer to the values of the registers
     wire [7:0] en_reg_out_7_0;
