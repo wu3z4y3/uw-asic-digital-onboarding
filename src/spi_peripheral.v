@@ -29,7 +29,9 @@ module spi_peripheral (
     reg [6:0] internal_address_register;
     reg read_write;
         
-    // synchronization chains to stabilize sclk, copi and ncs
+    assign ncs_posedge = sync_ncs[1] && !ncs_delay;
+    assign sclk_posedge = sync_sclk[1] && !sclk_delay;
+
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             sync_sclk <= 0;
@@ -37,26 +39,7 @@ module spi_peripheral (
             sync_ncs <= 2'b11;  // since sync_ncs is active low
             sclk_delay <= 0;
             ncs_delay <= 1;
-        end else begin
-            sync_sclk[0] <= ui_in[0];
-            sync_sclk[1] <= sync_sclk[0];
-            sclk_delay <= sync_sclk[1];
 
-            sync_copi[0] <= ui_in[1];
-            sync_copi[1] <= sync_copi[0];
-            
-            sync_ncs[0] <= ui_in[2];
-            sync_ncs[1] <= sync_ncs[0];
-            ncs_delay <= sync_ncs[1];
-        end
-    end
-
-    assign ncs_posedge = sync_ncs[1] && !ncs_delay;
-    assign sclk_posedge = sync_sclk[1] && !sclk_delay;
-
-    // updating spi registers
-    always @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
             internal_data_register <= 0;
             internal_address_register <= 0;
             bit_counter <= 0;
@@ -67,6 +50,18 @@ module spi_peripheral (
             en_reg_pwm_15_8 <= 0;
             pwm_duty_cycle <= 0;
         end else begin
+            // synchronization chains to stabilize sclk, copi and ncs
+            sync_sclk[0] <= ui_in[0];
+            sync_sclk[1] <= sync_sclk[0];
+            sclk_delay <= sync_sclk[1];
+
+            sync_copi[0] <= ui_in[1];
+            sync_copi[1] <= sync_copi[0];
+            
+            sync_ncs[0] <= ui_in[2];
+            sync_ncs[1] <= sync_ncs[0];
+            ncs_delay <= sync_ncs[1];
+
             // read in data when nCS pulled low to signal transaction is in progress
             if (!sync_ncs[1]) begin
                 if (sclk_posedge) begin
@@ -93,6 +88,7 @@ module spi_peripheral (
                         7'h02: en_reg_pwm_7_0 <= internal_data_register;
                         7'h03: en_reg_pwm_15_8 <= internal_data_register;
                         7'h04: pwm_duty_cycle <= internal_data_register;
+                        default: begin end
                     endcase
                 end
             end
